@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Streamer Broadcast Guide | Live Alert Center</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap');
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: #05070a;
+      color: #f8fafc;
+      font-family: 'Inter', sans-serif;
+      min-height: 100vh;
+      padding: 2rem 1rem;
+      display: flex;
+      justify-content: center;
+    }
+
+    .app-container {
+      width: 100%;
+      max-width: 900px;
+      display: flex;
+      flex-direction: column;
+      gap: 2rem;
+    }
+
+    /* HEADER BLOCK */
+    .header-card {
+      background: linear-gradient(145deg, rgba(11, 16, 30, 0.9), rgba(5, 7, 10, 0.95));
+      border: 1px solid rgba(30, 41, 59, 0.8);
+      border-radius: 20px;
+      padding: 2rem;
+      text-align: center;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.6);
+    }
+
+    .header-card h1 {
+      font-size: 2rem;
+      font-weight: 800;
+      color: #3b82f6;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 0.5rem;
+    }
+
+    .header-card p {
+      color: #94a3b8;
+      font-size: 0.95rem;
+    }
+
+    /* CONTROLS & ADD STREAMER FORM */
+    .control-panel {
+      background: #0b101e;
+      border: 1px solid #1e293b;
+      border-radius: 16px;
+      padding: 1.25rem;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1rem;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .input-group {
+      display: flex;
+      flex: 1;
+      gap: 0.5rem;
+      min-width: 280px;
+    }
+
+    .input-group input {
+      flex: 1;
+      background: #05070a;
+      border: 1px solid #334155;
+      border-radius: 8px;
+      padding: 0.75rem 1rem;
+      color: #fff;
+      font-size: 0.9rem;
+      outline: none;
+    }
+
+    .input-group input:focus {
+      border-color: #3b82f6;
+    }
+
+    .btn {
+      padding: 0.75rem 1.5rem;
+      border-radius: 8px;
+      font-weight: 700;
+      font-size: 0.9rem;
+      cursor: pointer;
+      border: none;
+      transition: all 0.2s ease;
+    }
+
+    .btn-primary {
+      background: #10b981;
+      color: #fff;
+    }
+
+    .btn-primary:hover {
+      background: #059669;
+      transform: translateY(-1px);
+    }
+
+    .btn-secondary {
+      background: #1e293b;
+      color: #94a3b8;
+      border: 1px solid #334155;
+    }
+
+    .btn-secondary:hover {
+      background: #334155;
+      color: #fff;
+    }
+
+    /* STREAMER GRID DISPLAY */
+    .streamer-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+      gap: 1.5rem;
+    }
+
+    .streamer-card {
+      background: rgba(11, 16, 30, 0.8);
+      border: 1px solid #1e293b;
+      border-radius: 16px;
+      padding: 1.5rem;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      position: relative;
+      overflow: hidden;
+      transition: all 0.2s ease;
+    }
+
+    .streamer-card:hover {
+      border-color: #3b82f6;
+      transform: translateY(-2px);
+    }
+
+    .streamer-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 1rem;
+    }
+
+    .streamer-name {
+      font-size: 1.2rem;
+      font-weight: 700;
+      color: #f8fafc;
+    }
+
+    .platform-tag {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: #64748b;
+      font-weight: 600;
+      margin-top: 0.25rem;
+    }
+
+    .status-badge {
+      padding: 0.25rem 0.6rem;
+      border-radius: 20px;
+      font-size: 0.7rem;
+      font-weight: 800;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+    }
+
+    .status-badge.live {
+      background: rgba(239, 68, 68, 0.2);
+      color: #ef4444;
+      border: 1px solid #ef4444;
+      animation: pulseGlow 2s infinite;
+    }
+
+    .status-badge.offline {
+      background: rgba(100, 116, 139, 0.2);
+      color: #64748b;
+      border: 1px solid #334155;
+    }
+
+    @keyframes pulseGlow {
+      0%, 100% { box-shadow: 0 0 5px rgba(239, 68, 68, 0.4); }
+      50% { box-shadow: 0 0 15px rgba(239, 68, 68, 0.8); }
+    }
+
+    .card-actions {
+      display: flex;
+      gap: 0.5rem;
+      margin-top: 1.5rem;
+    }
+
+    .btn-watch {
+      flex: 1;
+      text-decoration: none;
+      text-align: center;
+      background: #3b82f6;
+      color: #fff;
+      padding: 0.6rem 1rem;
+      border-radius: 8px;
+      font-weight: 700;
+      font-size: 0.85rem;
+      transition: background 0.2s;
+    }
+
+    .btn-watch:hover {
+      background: #2563eb;
+    }
+
+    .btn-delete {
+      background: transparent;
+      color: #64748b;
+      border: 1px solid #1e293b;
+      padding: 0.6rem;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+
+    .btn-delete:hover {
+      color: #ef4444;
+      border-color: #ef4444;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="app-container">
+    
+    <div class="header-card">
+      <h1>📡 Broadcast Guide & Live Center</h1>
+      <p>Real-time channel tracker & notification dispatcher for your favorite streamers.</p>
+    </div>
+
+    <!-- ADD STREAMER CONTROL PANEL -->
+    <div class="control-panel">
+      <div class="input-group">
+        <input type="text" id="streamerNameInput" placeholder="Creator Name (e.g., sizzsarz)">
+        <input type="url" id="streamerUrlInput" placeholder="Live Link (e.g., https://www.tiktok.com/@sizzsarz/live)">
+      </div>
+      <button class="btn btn-primary" onclick="addStreamer()">+ Add Streamer</button>
+      <button class="btn btn-secondary" onclick="requestNotificationPermission()">🔔 Enable Alerts</button>
+    </div>
+
+    <!-- STREAMERS GRID -->
+    <div class="streamer-grid" id="streamerGrid"></div>
+
+  </div>
+
+  <script>
+    // Initial Seed List
+    let streamers = JSON.parse(localStorage.getItem('user_streamers')) || [
+      {
+        id: 1,
+        name: "sizzsarz",
+        platform: "TikTok Live",
+        url: "https://www.tiktok.com/@sizzsarz/live?_r=1&enter_from_merge=pc_share&enter_method=pc_share&is_from_webapp=1&sender_device=pc",
+        isLive: true
+      }
+    ];
+
+    function saveToStorage() {
+      localStorage.setItem('user_streamers', JSON.stringify(streamers));
+    }
+
+    function renderGrid() {
+      const grid = document.getElementById('streamerGrid');
+      grid.innerHTML = '';
+
+      streamers.forEach(s => {
+        const card = document.createElement('div');
+        card.className = 'streamer-card';
+        card.innerHTML = `
+          <div>
+            <div class="streamer-header">
+              <div>
+                <div class="streamer-name">${s.name}</div>
+                <div class="platform-tag">${s.platform}</div>
+              </div>
+              <span class="status-badge ${s.isLive ? 'live' : 'offline'}">
+                ${s.isLive ? '● LIVE' : 'OFFLINE'}
+              </span>
+            </div>
+          </div>
+          <div class="card-actions">
+            <a href="${s.url}" target="_blank" class="btn-watch">
+              ${s.isLive ? '▶ Watch Stream' : 'View Profile'}
+            </a>
+            <button class="btn-delete" onclick="removeStreamer(${s.id})">✕</button>
+          </div>
+        `;
+        grid.appendChild(card);
+      });
+    }
+
+    function addStreamer() {
+      const nameInput = document.getElementById('streamerNameInput');
+      const urlInput = document.getElementById('streamerUrlInput');
+
+      if (!nameInput.value || !urlInput.value) {
+        alert("Please provide both a Creator Name and a Live URL.");
+        return;
+      }
+
+      let platform = "Web Live";
+      if (urlInput.value.includes("tiktok.com")) platform = "TikTok Live";
+      else if (urlInput.value.includes("twitch.tv")) platform = "Twitch";
+      else if (urlInput.value.includes("youtube.com")) platform = "YouTube Live";
+
+      const newStreamer = {
+        id: Date.now(),
+        name: nameInput.value.trim(),
+        platform: platform,
+        url: urlInput.value.trim(),
+        isLive: true // Defaulted to active for demonstration
+      };
+
+      streamers.push(newStreamer);
+      saveToStorage();
+      renderGrid();
+
+      nameInput.value = '';
+      urlInput.value = '';
+    }
+
+    function removeStreamer(id) {
+      streamers = streamers.filter(s => s.id !== id);
+      saveToStorage();
+      renderGrid();
+    }
+
+    function requestNotificationPermission() {
+      if ("Notification" in window) {
+        Notification.requestPermission().then(permission => {
+          if (permission === "granted") {
+            new Notification("Alerts Activated!", {
+              body: "You will receive desktop alerts when monitored creators go live."
+            });
+          }
+        });
+      }
+    }
+
+    // Initial render call
+    renderGrid();
+  </script>
+</body>
+</html>
