@@ -121,6 +121,14 @@
       color: #fff;
     }
 
+    /* STATUS SYNC BAR */
+    .sync-status {
+      font-size: 0.8rem;
+      color: #64748b;
+      text-align: right;
+      padding-right: 0.5rem;
+    }
+
     /* STREAMER GRID DISPLAY */
     .streamer-grid {
       display: grid;
@@ -217,20 +225,6 @@
     .btn-watch:hover {
       background: #2563eb;
     }
-
-    .btn-delete {
-      background: transparent;
-      color: #64748b;
-      border: 1px solid #1e293b;
-      padding: 0.6rem;
-      border-radius: 8px;
-      cursor: pointer;
-    }
-
-    .btn-delete:hover {
-      color: #ef4444;
-      border-color: #ef4444;
-    }
   </style>
 </head>
 <body>
@@ -239,45 +233,67 @@
     
     <div class="header-card">
       <h1>📡 Broadcast Guide & Live Center</h1>
-      <p>Real-time channel tracker & notification dispatcher for your favorite streamers.</p>
+      <p>Real-time channel tracker synced directly with your Google Sheet backend.</p>
     </div>
 
     <!-- ADD STREAMER CONTROL PANEL -->
     <div class="control-panel">
       <div class="input-group">
-        <input type="text" id="streamerNameInput" placeholder="Creator Name (e.g., sizzsarz)">
-        <input type="url" id="streamerUrlInput" placeholder="Live Link (e.g., https://www.tiktok.com/@sizzsarz/live)">
+        <input type="url" id="streamerUrlInput" placeholder="Paste Creator Profile Link (e.g., https://www.tiktok.com/@username)">
       </div>
-      <button class="btn btn-primary" onclick="addStreamer()">+ Add Streamer</button>
+      <button class="btn btn-primary" onclick="addNewStreamerToSheet()">+ Sync & Add Streamer</button>
       <button class="btn btn-secondary" onclick="requestNotificationPermission()">🔔 Enable Alerts</button>
     </div>
+    
+    <div class="sync-status" id="syncStatus">Connecting to Google Sheet...</div>
 
     <!-- STREAMERS GRID -->
-    <div class="streamer-grid" id="streamerGrid"></div>
+    <div class="streamer-grid" id="streamerGrid">
+      <div style="color: #64748b; text-align: center; grid-column: 1 / -1; padding: 2rem;">Loading streamers from cloud sheet...</div>
+    </div>
 
   </div>
 
   <script>
-    // Initial Seed List
-    let streamers = JSON.parse(localStorage.getItem('user_streamers')) || [
-      {
-        id: 1,
-        name: "sizzsarz",
-        platform: "TikTok Live",
-        url: "https://www.tiktok.com/@sizzsarz/live?_r=1&enter_from_merge=pc_share&enter_method=pc_share&is_from_webapp=1&sender_device=pc",
-        isLive: true
-      }
-    ];
+    // REPLACE WITH YOUR PUBLISHED APPS SCRIPT WEB APP URL (/exec)
+    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbwVBi6RYyI4drSl-VDI5_gL7DXIclsrTnYkcp3pZv9jNB6_50I3xdjQlvWWRveAJaxnkA/exec";
 
-    function saveToStorage() {
-      localStorage.setItem('user_streamers', JSON.stringify(streamers));
+    let streamers = [];
+
+    // 1. FETCH STREAMERS FROM GOOGLE SHEET VIA WEB APP doGet
+    async function fetchStreamersFromCloud() {
+      if (!WEB_APP_URL || WEB_APP_URL.includes("YOUR_APPS_SCRIPT")) {
+        document.getElementById('syncStatus').innerText = "⚠️ Please set your Web App URL in the HTML code.";
+        return;
+      }
+
+      try {
+        const response = await fetch(WEB_APP_URL);
+        const data = await response.json();
+
+        if (data.status === "success" && data.streamers) {
+          streamers = data.streamers;
+          renderGrid();
+          document.getElementById('syncStatus').innerText = "🟢 Synced live with Google Sheet (" + new Date().toLocaleTimeString() + ")";
+        }
+      } catch (err) {
+        console.error("Error fetching sheet data:", err);
+        document.getElementById('syncStatus').innerText = "🔴 Error connecting to Google Sheet backend.";
+      }
     }
 
+    // 2. RENDER STREAMER CARDS
     function renderGrid() {
       const grid = document.getElementById('streamerGrid');
       grid.innerHTML = '';
 
+      if (streamers.length === 0) {
+        grid.innerHTML = '<div style="color: #64748b; text-align: center; grid-column: 1 / -1; padding: 2rem;">No streamers found in your guide. Add one above!</div>';
+        return;
+      }
+
       streamers.forEach(s => {
+        const isLive = s.status === "LIVE";
         const card = document.createElement('div');
         card.className = 'streamer-card';
         card.innerHTML = `
@@ -287,58 +303,57 @@
                 <div class="streamer-name">${s.name}</div>
                 <div class="platform-tag">${s.platform}</div>
               </div>
-              <span class="status-badge ${s.isLive ? 'live' : 'offline'}">
-                ${s.isLive ? '● LIVE' : 'OFFLINE'}
+              <span class="status-badge ${isLive ? 'live' : 'offline'}">
+                ${isLive ? '● LIVE' : 'OFFLINE'}
               </span>
             </div>
           </div>
           <div class="card-actions">
             <a href="${s.url}" target="_blank" class="btn-watch">
-              ${s.isLive ? '▶ Watch Stream' : 'View Profile'}
+              ${isLive ? '▶ Watch Live Stream' : 'View Channel'}
             </a>
-            <button class="btn-delete" onclick="removeStreamer(${s.id})">✕</button>
           </div>
         `;
         grid.appendChild(card);
       });
     }
 
-    function addStreamer() {
-      const nameInput = document.getElementById('streamerNameInput');
+    // 3. ADD STREAMER VIA WEB APP doPost (Sends to Streamer_Intake)
+    async function addNewStreamerToSheet() {
       const urlInput = document.getElementById('streamerUrlInput');
+      const rawUrl = urlInput.value.trim();
 
-      if (!nameInput.value || !urlInput.value) {
-        alert("Please provide both a Creator Name and a Live URL.");
+      if (!rawUrl) {
+        alert("Please paste a valid creator profile URL.");
         return;
       }
 
-      let platform = "Web Live";
-      if (urlInput.value.includes("tiktok.com")) platform = "TikTok Live";
-      else if (urlInput.value.includes("twitch.tv")) platform = "Twitch";
-      else if (urlInput.value.includes("youtube.com")) platform = "YouTube Live";
+      document.getElementById('syncStatus').innerText = "⏳ Adding streamer to cloud sheet...";
 
-      const newStreamer = {
-        id: Date.now(),
-        name: nameInput.value.trim(),
-        platform: platform,
-        url: urlInput.value.trim(),
-        isLive: true // Defaulted to active for demonstration
-      };
+      try {
+        const response = await fetch(WEB_APP_URL, {
+          method: "POST",
+          body: JSON.stringify({ url: rawUrl }),
+          headers: {
+            "Content-Type": "text/plain;charset=utf-8"
+          }
+        });
 
-      streamers.push(newStreamer);
-      saveToStorage();
-      renderGrid();
-
-      nameInput.value = '';
-      urlInput.value = '';
+        const result = await response.json();
+        if (result.status === "success") {
+          urlInput.value = '';
+          alert("Streamer successfully added and formatted in your sheet!");
+          fetchStreamersFromCloud(); // Refresh grid
+        } else {
+          alert("Error adding streamer: " + result.message);
+        }
+      } catch (err) {
+        alert("Network error while adding streamer.");
+        console.error(err);
+      }
     }
 
-    function removeStreamer(id) {
-      streamers = streamers.filter(s => s.id !== id);
-      saveToStorage();
-      renderGrid();
-    }
-
+    // 4. DESKTOP NOTIFICATIONS FOR LIVE CHANNELS
     function requestNotificationPermission() {
       if ("Notification" in window) {
         Notification.requestPermission().then(permission => {
@@ -351,8 +366,9 @@
       }
     }
 
-    // Initial render call
-    renderGrid();
+    // Poll Google Sheet for live updates every 30 seconds
+    fetchStreamersFromCloud();
+    setInterval(fetchStreamersFromCloud, 30000);
   </script>
 </body>
 </html>
